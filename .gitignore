@@ -1,0 +1,27 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/Minesweeper/obj/Debug/Minesweeper.Properties.Resources.resources
+/Minesweeper/obj/Debug/Minesweeper.pdb
+/Minesweeper/obj/Debug/Minesweeper.Form1.resources
+/Minesweeper/obj/Debug/Minesweeper.exe
+/Minesweeper/obj/Debug/Minesweeper.csproj.SuggestedBindingRedirects.cache
+/Minesweeper/obj/Debug/Minesweeper.csproj.GenerateResource.cache
+/Minesweeper/obj/Debug/Minesweeper.csproj.FileListAbsolute.txt
+/Minesweeper/obj/Debug/Minesweeper.csproj.CoreCompileInputs.cache
+/Minesweeper/obj/Debug/Minesweeper.csproj.AssemblyReference.cache
+/Minesweeper/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
+/Minesweeper/obj/Debug/DesignTimeResolveAssemblyReferences.cache
+/Minesweeper/obj/Debug/.NETFramework,Version=v4.7.2.AssemblyAttributes.cs
+/Minesweeper/obj/Debug
+/Minesweeper/bin/Debug/Minesweeper.pdb
+/Minesweeper/bin/Debug/Minesweeper.exe.config
+/Minesweeper/bin/Debug/Minesweeper.exe
+/Minesweeper/bin/Debug
+/Minesweeper
+/.vs/Minesweeper/v17/TestStore/0/testlog.manifest
+/.vs/Minesweeper/v17/TestStore/0/000.testlog
+/.vs/Minesweeper/v17/TestStore/0
+/.vs/Minesweeper/v17/.suo
+/.vs/Minesweeper/v17
