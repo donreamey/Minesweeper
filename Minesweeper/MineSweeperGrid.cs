@@ -7,19 +7,15 @@ namespace Minesweeper
 {
     internal class MineSweeperGrid
     {
-        internal enum Direction
-        {
-            TOP = 0x1,
-            RIGHT = 0x2,
-            BOTTOM = 0x4,
-            LEFT = 0x8,
-        }
-
         private MineSweeperButton[,] buttons;
         private int upperXBound;
         private int upperYBound;
         private int startX = 128;
         private int startY = 80;
+        private bool[,] visited;
+        private int visitCount = 0;
+        private Utilities utilties;
+
         internal MineSweeperGrid(int size, Control.ControlCollection controls)
         {
             buttons = new MineSweeperButton[size, size];
@@ -27,13 +23,14 @@ namespace Minesweeper
             upperYBound = buttons.GetLength(1);
 
             int numberOfBombs = (int)Math.Round(upperYBound * upperYBound * .10);
+            visited = new bool[buttons.GetUpperBound(1) + 1, buttons.GetUpperBound(0) + 1];
             int[] bombArray = new int[numberOfBombs];
 
             for (int i = 0; i < numberOfBombs; i++)
             {
                 System.Threading.Thread.Sleep(5);
                 Random random = new Random(DateTime.Now.Millisecond);
-                bombArray[i] = random.Next(i, upperXBound * upperYBound);
+                bombArray[i] = random.Next(0, upperXBound * upperYBound);
             }
 
             int bombCounter = 0;
@@ -67,6 +64,8 @@ namespace Minesweeper
                 startX = 128 + 3;
                 startY += 70 + 3;
             }
+
+            this.utilties = new Utilities(buttons);
         }
 
         internal void SetMineSweeperButton(int i, int j, bool hasBomb)
@@ -74,18 +73,14 @@ namespace Minesweeper
 
         }
 
-        internal int X
-        {
-            get { return buttons.GetLength(0); }
-        }
-
-        internal int Y
-        {
-            get { return buttons.GetLength(1); }
-        }
-
         private void CheckGridLocation(object sender, EventArgs e)
         {
+            if (visitCount == upperYBound * upperYBound)
+            {
+                MessageBox.Show("Game Over");
+                return;
+            }
+            
             MineSweeperButton bomb = (MineSweeperButton)sender;
             MouseEventArgs me = (MouseEventArgs)e;
             if (me.Button == MouseButtons.Right)
@@ -106,7 +101,7 @@ namespace Minesweeper
                         buttons[(int)i, j].Text = this.buttons[i, j].Data;
                         this.buttons[i, j].Enabled = false;
 
-                        if (this.buttons[i, j].Data.Equals("B"))
+                        if (this.buttons[i, j].HasBomb)
                         {
                             buttons[i, j].BackColor = Color.Red;
                             continue;
@@ -126,10 +121,11 @@ namespace Minesweeper
                         }
                     }
                 }
+
+                MessageBox.Show("Game Over - You lose!");
             }
             else
             {
-                bool[,] visited = new bool[buttons.GetUpperBound(1) + 1, buttons.GetUpperBound(0) + 1];
                 Queue<Point> q = new Queue<Point>();
 
                 q.Enqueue(bomb.SquarePoint);
@@ -142,12 +138,13 @@ namespace Minesweeper
                     }
 
                     visited[p.X, p.Y] = true;
+                    visitCount++;
 
                     if (buttons[p.X, p.Y].IsEmpty)
                     {
                         buttons[p.X, p.Y].BackColor = Color.White;
 
-                        if (isValid(p.X - 1, p.Y - 1))
+                        if (utilties.isValid(p.X - 1, p.Y - 1))
                         {
                             if (buttons[p.X - 1, p.Y - 1].IsEmpty)
                             {
@@ -160,7 +157,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X - 1, p.Y))
+                        if (utilties.isValid(p.X - 1, p.Y))
                         {
                             if (buttons[p.X - 1, p.Y].IsEmpty)
                             {
@@ -173,7 +170,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X - 1, p.Y + 1))
+                        if (utilties.isValid(p.X - 1, p.Y + 1))
                         {
                             if (buttons[p.X - 1, p.Y + 1].IsEmpty)
                             {
@@ -186,7 +183,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X, p.Y + 1))
+                        if (utilties.isValid(p.X, p.Y + 1))
                         {
                             if (buttons[p.X, p.Y + 1].IsEmpty)
                             {
@@ -199,7 +196,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X, p.Y - 1))
+                        if (utilties.isValid(p.X, p.Y - 1))
                         {
                             if (buttons[p.X, p.Y - 1].IsEmpty)
                             {
@@ -212,7 +209,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X + 1, p.Y + 1))
+                        if (utilties.isValid(p.X + 1, p.Y + 1))
                         {
                             if (buttons[p.X + 1, p.Y + 1].IsEmpty)
                             {
@@ -225,7 +222,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X + 1, p.Y))
+                        if (utilties.isValid(p.X + 1, p.Y))
                         {
                             if (buttons[p.X + 1, p.Y].IsEmpty)
                             {
@@ -238,7 +235,7 @@ namespace Minesweeper
                             }
                         }
 
-                        if (isValid(p.X + 1, p.Y - 1))
+                        if (utilties.isValid(p.X + 1, p.Y - 1))
                         {
                             if (buttons[p.X + 1, p.Y - 1].IsEmpty)
                             {
@@ -266,26 +263,25 @@ namespace Minesweeper
                     }
                 }
             }
-
         }
 
-        bool isValid(Point p)
-        {
-            return isValid(p.X, p.Y);
-        }
+        //private bool isValid(Point p)
+        //{
+        //    return isValid(p.X, p.Y);
+        //}
 
-        bool isValid(int x, int y)
-        {
-            int xupperBound = buttons.GetUpperBound(1);
-            int yupperBound = buttons.GetUpperBound(0);
+        //private bool isValid(int x, int y)
+        //{
+        //    int xupperBound = buttons.GetUpperBound(1);
+        //    int yupperBound = buttons.GetUpperBound(0);
 
-            if (x < 0 || x > xupperBound || y < 0 || y > yupperBound)
-            {
-                return false;
-            }
+        //    if (x < 0 || x > xupperBound || y < 0 || y > yupperBound)
+        //    {
+        //        return false;
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         internal void InitializeGrid()
         {
@@ -305,80 +301,44 @@ namespace Minesweeper
 
                 visited[p.X, p.Y] = true;
 
-                if (isValid(SetDirection(p, Direction.TOP | Direction.LEFT)))
+                if (this.utilties.isValid(SetDirection(p, Direction.TOPLEFT)))
                 {
-                    if (buttons[p.X - 1, p.Y - 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-
-                    q.Enqueue(new Point(p.X - 1, p.Y - 1));
-
+                    bombCount = Enqueue(q, bombCount, p, Direction.TOPLEFT);
                 }
 
-                if (isValid(SetDirection(p, Direction.LEFT)))
+                if (this.utilties.isValid(SetDirection(p, Direction.LEFT)))
                 {
-                    if (buttons[p.X - 1, p.Y].HasBomb)
-                    {
-                        bombCount++;
-                    }
-
-                    q.Enqueue(new Point(p.X - 1, p.Y));
+                    bombCount = Enqueue(q, bombCount, p, Direction.LEFT);
                 }
 
-                if (isValid(SetDirection(p, Direction.BOTTOM | Direction.LEFT)))
+                if (this.utilties.isValid(SetDirection(p, Direction.BOTTOMLEFT)))
                 {
-                    if (buttons[p.X - 1, p.Y + 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-
-                    q.Enqueue(new Point(p.X - 1, p.Y + 1));
+                    bombCount = Enqueue(q, bombCount, p, Direction.BOTTOMLEFT);
                 }
 
-                if (isValid(SetDirection(p, Direction.BOTTOM)))
+                if (this.utilties.isValid(SetDirection(p, Direction.BOTTOM)))
                 {
-                    if (buttons[p.X, p.Y + 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-                    q.Enqueue(new Point(p.X, p.Y + 1));
+                    bombCount = Enqueue(q, bombCount, p, Direction.BOTTOM);
                 }
 
-                if (isValid(SetDirection(p, Direction.TOP)))
+                if (this.utilties.isValid(SetDirection(p, Direction.TOP)))
                 {
-                    if (buttons[p.X, p.Y - 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-                    q.Enqueue(new Point(p.X, p.Y - 1));
+                    bombCount = Enqueue(q, bombCount, p, Direction.TOP);
                 }
 
-                if (isValid(p.X + 1, p.Y + 1))
+                if (this.utilties.isValid(SetDirection(p, Direction.TOPRIGHT)))
                 {
-                    if (buttons[p.X + 1, p.Y + 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-                    q.Enqueue(new Point(p.X + 1, p.Y + 1));
+                    bombCount = Enqueue(q, bombCount, p, Direction.TOPRIGHT);
                 }
 
-                if (isValid(SetDirection(p, Direction.RIGHT)))
+                if (this.utilties.isValid(SetDirection(p, Direction.RIGHT)))
                 {
-                    if (buttons[p.X + 1, p.Y].HasBomb)
-                    {
-                        bombCount++;
-                    }
-                    q.Enqueue(new Point(p.X + 1, p.Y));
+                    bombCount = Enqueue(q, bombCount, p, Direction.RIGHT );
                 }
 
-                if (isValid(SetDirection(p, Direction.TOP | Direction.RIGHT)))
+                if (this.utilties.isValid(SetDirection(p, Direction.BOTTOMRIGHT)))
                 {
-                    if (buttons[p.X + 1, p.Y - 1].HasBomb)
-                    {
-                        bombCount++;
-                    }
-                    q.Enqueue(new Point(p.X + 1, p.Y - 1));
+                    bombCount = Enqueue(q, bombCount, p, Direction.BOTTOMRIGHT);
                 }
 
                 if (!buttons[p.X, p.Y].HasBomb)
@@ -396,6 +356,18 @@ namespace Minesweeper
 
                 bombCount = 0;
             }
+        }
+
+        private int Enqueue(Queue<Point> q, int bombCount, Point p, Direction d)
+        {
+            Point pdir = SetDirection(p, d);
+            if (buttons[pdir.X, pdir.Y].HasBomb)
+            {
+                bombCount++;
+            }
+
+            q.Enqueue(pdir);
+            return bombCount;
         }
 
         private Point SetDirection(Point p, Direction direction)
