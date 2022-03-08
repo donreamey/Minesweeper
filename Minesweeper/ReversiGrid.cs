@@ -10,6 +10,7 @@ namespace Minesweeper
     internal class ReversiGrid
     {
         private ReversiButton[,] buttonState;
+        private bool[,] emptyVisited;
         private Color[,] c;
         private int upperXBound;
         private int upperYBound;
@@ -28,6 +29,7 @@ namespace Minesweeper
         internal ReversiGrid(int size, Control.ControlCollection controls)
         {
             buttonState = new ReversiButton[size, size];
+            emptyVisited = new bool[size, size];
             upperXBound = buttonState.GetLength(0);
             upperYBound = buttonState.GetLength(1);
 
@@ -107,56 +109,68 @@ namespace Minesweeper
         {
             var tempState = buttonState;
             Queue<Point> movePoints = new Queue<Point>();
+            if (tempState[this.lastKnownStart.X, this.lastKnownStart.Y].IsEmpty)
+            {
+                return;
+            }
             Utilities u = new Utilities(tempState);
-            dd
+            
             movePoints.Enqueue(this.lastKnownStart);
 
             while(movePoints.Count > 0)
             {
                 var p = movePoints.Dequeue();
-                if (!tempState[p.X,p.Y].IsEmpty)
+                if (u.IsValidAndEmptyReversi(p.X, p.Y - 1))
                 {
-                    if (u.isValid(p.X + 1, p.Y) && tempState[p.X + 1, p.Y].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X - 1, p.Y) && tempState[p.X - 1, p.Y].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X , p.Y + 1) && tempState[p.X, p.Y + 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X, p.Y - 1) && tempState[p.X, p.Y - 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X - 1, p.Y - 1) && tempState[p.X - 1, p.Y - 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X + 1, p.Y + 1) && tempState[p.X + 1, p.Y + 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X - 1, p.Y + 1) && tempState[p.X - 1, p.Y + 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
-
-                    if (u.isValid(p.X + 1, p.Y - 1) && tempState[p.X + 1, p.Y - 1].BackColor != currentColor)
-                    {
-                        movePoints.Enqueue(p);
-                    }
+                    this.emptyVisited[p.X, p.Y - 1] = true;
+                    //movePoints.Enqueue(new Point(p.X + 1, p.Y));
+                    //CheckValidMove(buttonState[p.X + 1, p.Y]);
+                    int count = GenericValidate(tempState[p.X, p.Y - 1], Direction.LEFT);
+                    break;
                 }
+
+                /*
+                if (u.isValid(p.X - 1, p.Y) && tempState[p.X - 1, p.Y].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X , p.Y + 1) && tempState[p.X, p.Y + 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X, p.Y - 1) && tempState[p.X, p.Y - 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X - 1, p.Y - 1) && tempState[p.X - 1, p.Y - 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X + 1, p.Y + 1) && tempState[p.X + 1, p.Y + 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X - 1, p.Y + 1) && tempState[p.X - 1, p.Y + 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+
+                if (u.isValid(p.X + 1, p.Y - 1) && tempState[p.X + 1, p.Y - 1].BackColor != currentColor)
+                {
+                    movePoints.Enqueue(p);
+                }
+                */
             }
+        }
+
+        private void CheckNeighbors(Point p)
+        {
+
         }
 
         private void CheckGridLocation(object sender, EventArgs e)
@@ -168,7 +182,7 @@ namespace Minesweeper
 
             ReversiButton start = (ReversiButton)sender;
             MouseEventArgs me = (MouseEventArgs)e;
-            this.lastKnownStart = start.SquarePoint;
+            
 
             if (me.Button == MouseButtons.Right)
             {
@@ -176,17 +190,26 @@ namespace Minesweeper
                 buttonState[start.SquarePoint.X, start.SquarePoint.Y].Text = "?";
                 return;
             }
+
+            CheckValidMove(start);
+        }
+
+        private void CheckValidMove(ReversiButton start)
+        {
+            this.lastKnownStart = start.SquarePoint;
             if (start.BackColor != this.emptyColor)
             {
                 return;
             }
 
+            buttonState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
+
             int flipCount = 0;
 
+            flipCount += GenericValidate(start, Direction.LEFT);
             flipCount += GenericValidate(start, Direction.TOP);
             flipCount += GenericValidate(start, Direction.TOPLEFT);
             flipCount += GenericValidate(start, Direction.TOPRIGHT);
-            flipCount += GenericValidate(start, Direction.LEFT);
             flipCount += GenericValidate(start, Direction.RIGHT);
             flipCount += GenericValidate(start, Direction.BOTTOMRIGHT);
             flipCount += GenericValidate(start, Direction.BOTTOM);
@@ -327,6 +350,7 @@ namespace Minesweeper
                 foreach (Point pt in points)
                 {
                     buttonState[pt.X, pt.Y].BackColor = this.currentColor;
+                    buttonState[pt.X, pt.Y].IsEmpty = false;
                 }
 
                 return points.Count;

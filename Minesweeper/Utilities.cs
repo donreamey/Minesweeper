@@ -31,6 +31,16 @@ namespace Minesweeper
 
             return true;
         }
+
+        internal bool IsValidAndEmptyReversi(int x, int y)
+        {
+            if(!isValid(x, y) || !((ReversiButton)this.buttons[x, y]).IsEmpty)
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 
     internal class Visited

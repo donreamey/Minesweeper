@@ -33,6 +33,10 @@ namespace Minesweeper
             {
                 return isEmpty;
             }
+            set
+            {
+                isEmpty = value;
+            }
         }
 
         private void InitializeComponent()
