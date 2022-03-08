@@ -123,8 +123,6 @@ namespace Minesweeper
                 if (u.IsValidAndEmptyReversi(p.X, p.Y - 1))
                 {
                     this.emptyVisited[p.X, p.Y - 1] = true;
-                    //movePoints.Enqueue(new Point(p.X + 1, p.Y));
-                    //CheckValidMove(buttonState[p.X + 1, p.Y]);
                     int count = GenericValidate(tempState[p.X, p.Y - 1], Direction.LEFT);
                     break;
                 }
