@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
@@ -114,55 +115,65 @@ namespace Minesweeper
                 return;
             }
             Utilities u = new Utilities(tempState);
-            
             movePoints.Enqueue(this.lastKnownStart);
+            List<Point> availableMoves = new List<Point>();
 
-            while(movePoints.Count > 0)
-            {
-                var p = movePoints.Dequeue();
+            var p = this.lastKnownStart;
+            //for(int i=0; i<8; i++)
+            //{ 
                 if (u.IsValidAndEmptyReversi(p.X, p.Y - 1))
                 {
                     this.emptyVisited[p.X, p.Y - 1] = true;
-                    int count = GenericValidate(tempState[p.X, p.Y - 1], Direction.LEFT);
-                    break;
+                    availableMoves.Add(new Point(p.X, p.Y - 1));
+                    buttonState[p.X, p.Y - 1].Text = "VALID";
                 }
-
-                /*
-                if (u.isValid(p.X - 1, p.Y) && tempState[p.X - 1, p.Y].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X -1, p.Y - 1))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X - 1, p.Y - 1] = true;
+                    availableMoves.Add(new Point(p.X - 1, p.Y - 1));
+                    buttonState[p.X - 1, p.Y - 1].Text = "VALID";
                 }
-
-                if (u.isValid(p.X , p.Y + 1) && tempState[p.X, p.Y + 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X+1, p.Y + 1))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X + 1, p.Y + 1] = true;
+                    availableMoves.Add(new Point(p.X + 1, p.Y + 1));
+                    buttonState[p.X + 1, p.Y + 1].Text = "VALID";
                 }
-
-                if (u.isValid(p.X, p.Y - 1) && tempState[p.X, p.Y - 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X + 1, p.Y - 1))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X + 1, p.Y - 1] = true;
+                    availableMoves.Add(new Point(p.X + 1, p.Y - 1));
+                    buttonState[p.X + 1, p.Y - 1].Text = "VALID";
                 }
-
-                if (u.isValid(p.X - 1, p.Y - 1) && tempState[p.X - 1, p.Y - 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X- 1, p.Y + 1))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X - 1, p.Y + 1] = true;
+                    availableMoves.Add(new Point(p.X - 1, p.Y + 1));
+                    buttonState[p.X - 1, p.Y + 1].Text = "VALID";
                 }
-
-                if (u.isValid(p.X + 1, p.Y + 1) && tempState[p.X + 1, p.Y + 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X + 1, p.Y))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X + 1, p.Y] = true;
+                    availableMoves.Add(new Point(p.X + 1, p.Y));
+                    buttonState[p.X + 1, p.Y].Text = "VALID";
                 }
-
-                if (u.isValid(p.X - 1, p.Y + 1) && tempState[p.X - 1, p.Y + 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X - 1, p.Y))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X - 1, p.Y] = true;
+                    availableMoves.Add(new Point(p.X - 1, p.Y));
+                    buttonState[p.X - 1, p.Y].Text = "VALID";
                 }
-
-                if (u.isValid(p.X + 1, p.Y - 1) && tempState[p.X + 1, p.Y - 1].BackColor != currentColor)
+                if (u.IsValidAndEmptyReversi(p.X, p.Y + 1))
                 {
-                    movePoints.Enqueue(p);
+                    this.emptyVisited[p.X, p.Y + 1] = true;
+                    availableMoves.Add(new Point(p.X, p.Y + 1));
+                    buttonState[p.X, p.Y + 1].Text = "VALID";
                 }
-                */
+            //}
+
+            if (availableMoves.Count > 0)
+            {
+                Trace.WriteLine("check available moves");
             }
         }
 
