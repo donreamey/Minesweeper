@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
+using Minesweeper;
 
-namespace Minesweeper
+namespace Reversi
 {
     internal class ReversiGrid
     {
@@ -55,20 +56,28 @@ namespace Minesweeper
 
             int middlex = buttonState.GetUpperBound(0) / 2;
             int middley = buttonState.GetUpperBound(1) / 2;
+
             buttonState[middlex, middley].BackColor = Color.White;
-            buttonState[middlex, middley + 1].BackColor = Color.Black;
-            buttonState[middlex + 1, middley + 1].BackColor = Color.White;
-            buttonState[middlex + 1, middley].BackColor = Color.Black;
+            buttonState[middlex, middley].IsEmpty = false;
             buttonState[middlex, middley].Enabled = false;
+
+            buttonState[middlex, middley + 1].BackColor = Color.Black;
+            buttonState[middlex, middley + 1].IsEmpty = false;
+            buttonState[middlex, middley + 1].Enabled = false;
+
+            buttonState[middlex + 1, middley + 1].BackColor = Color.White;
+            buttonState[middlex + 1, middley + 1].IsEmpty = false;
             buttonState[middlex, middley + 1].Enabled = false;
             buttonState[middlex + 1, middley + 1].Enabled = false;
+
+            buttonState[middlex + 1, middley].BackColor = Color.Black;
+            buttonState[middlex + 1, middley].IsEmpty = false;
             buttonState[middlex + 1, middley].Enabled = false;
 
             this.utilties = new Utilities(buttonState);
             turnButton = new Button();
             turnButton.Text = "Black";
             turnButton.BackColor = Color.Black;
-            turnButton.ForeColor = Color.White;
             turnButton.Location = new Point(0, 30);
             turnButton.Size = new Size(100,50);
             turnButton.Enabled = false;
@@ -103,83 +112,90 @@ namespace Minesweeper
             this.blackCountBox.Location = new Point(160, 60);
             this.blackCountBox.BorderStyle = BorderStyle.FixedSingle;
             controls.Add(blackCountBox);
-
         }
 
         private void GuessBestMove()
         {
-            var tempState = buttonState;
+            var tempState = (ReversiButton[,])buttonState.Clone();
+
             Queue<Point> movePoints = new Queue<Point>();
             if (tempState[this.lastKnownStart.X, this.lastKnownStart.Y].IsEmpty)
             {
                 return;
             }
             Utilities u = new Utilities(tempState);
-            movePoints.Enqueue(this.lastKnownStart);
+
             List<Point> availableMoves = new List<Point>();
 
-            var p = this.lastKnownStart;
-            //for(int i=0; i<8; i++)
-            //{ 
-                if (u.IsValidAndEmptyReversi(p.X, p.Y - 1))
-                {
-                    this.emptyVisited[p.X, p.Y - 1] = true;
-                    availableMoves.Add(new Point(p.X, p.Y - 1));
-                    buttonState[p.X, p.Y - 1].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X -1, p.Y - 1))
-                {
-                    this.emptyVisited[p.X - 1, p.Y - 1] = true;
-                    availableMoves.Add(new Point(p.X - 1, p.Y - 1));
-                    buttonState[p.X - 1, p.Y - 1].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X+1, p.Y + 1))
-                {
-                    this.emptyVisited[p.X + 1, p.Y + 1] = true;
-                    availableMoves.Add(new Point(p.X + 1, p.Y + 1));
-                    buttonState[p.X + 1, p.Y + 1].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X + 1, p.Y - 1))
-                {
-                    this.emptyVisited[p.X + 1, p.Y - 1] = true;
-                    availableMoves.Add(new Point(p.X + 1, p.Y - 1));
-                    buttonState[p.X + 1, p.Y - 1].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X- 1, p.Y + 1))
-                {
-                    this.emptyVisited[p.X - 1, p.Y + 1] = true;
-                    availableMoves.Add(new Point(p.X - 1, p.Y + 1));
-                    buttonState[p.X - 1, p.Y + 1].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X + 1, p.Y))
-                {
-                    this.emptyVisited[p.X + 1, p.Y] = true;
-                    availableMoves.Add(new Point(p.X + 1, p.Y));
-                    buttonState[p.X + 1, p.Y].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X - 1, p.Y))
-                {
-                    this.emptyVisited[p.X - 1, p.Y] = true;
-                    availableMoves.Add(new Point(p.X - 1, p.Y));
-                    buttonState[p.X - 1, p.Y].Text = "VALID";
-                }
-                if (u.IsValidAndEmptyReversi(p.X, p.Y + 1))
-                {
-                    this.emptyVisited[p.X, p.Y + 1] = true;
-                    availableMoves.Add(new Point(p.X, p.Y + 1));
-                    buttonState[p.X, p.Y + 1].Text = "VALID";
-                }
-            //}
+            var tempPoint = this.lastKnownStart;
 
+            foreach(Direction direction in Enum.GetValues(typeof(Direction)))
+            {
+                tempPoint = ModifyPointDirection(direction , this.lastKnownStart);
+                if (u.IsValidAndEmptyReversi(tempPoint))
+                { 
+                    this.emptyVisited[tempPoint.X, tempPoint.Y] = true;
+                    availableMoves.Add(tempPoint);
+                    tempState[tempPoint.X, tempPoint.Y].Text = "VALID";
+                }
+            }
+
+            var map = new Dictionary<int, FlipCounts>();
             if (availableMoves.Count > 0)
             {
+                int flipCount;
                 Trace.WriteLine("check available moves");
+                foreach(Point start in availableMoves)
+                {
+                    Trace.WriteLine("check available moves x = " + start.X +", Y = "+ start.Y);
+                    var tempButton = tempState[start.X, start.Y].Clone();
+                    var guessState = new State[12, 12];
+                    var points = new List<Point>();
+                    flipCount = CheckValidMove(tempButton, tempState, out points, out guessState, true);
+
+                    // reset tempState;
+                    tempState = (ReversiButton[,])buttonState.Clone();
+
+                    if (flipCount > 0 && !map.ContainsKey(flipCount))
+                    {
+                        var flipCounts = new FlipCounts
+                        {
+                            states = guessState,
+                            points = points
+                        };
+
+                        map.Add(points.Count, flipCounts);
+                    }
+                }
             }
+
+            if (map.Count > 0)
+            {
+                ApplyBestMove(map);
+            }
+
+            lastKnownStart = tempPoint;
         }
 
-        private void CheckNeighbors(Point p)
+        private void ApplyBestMove(Dictionary<int,FlipCounts> map)
         {
+            int count = 0;
+            foreach(int x in map.Keys)
+            {
+                if (x > count)
+                {
+                    count = x;
+                }
+            }
 
+            var flips = map[count];
+            foreach(var p in flips.points)
+            {
+                ((ReversiButton)this.buttonState[p.X, p.Y]).BackColor = flips.states[p.X, p.Y].BackColor;
+                ((ReversiButton)this.buttonState[p.X, p.Y]).SquarePoint = p;
+                ((ReversiButton)this.buttonState[p.X, p.Y]).IsEmpty = flips.states[p.X, p.Y].IsEmpty;
+                ((ReversiButton)this.buttonState[p.X, p.Y]).BackColor = flips.states[p.X, p.Y].BackColor;
+            }
         }
 
         private void CheckGridLocation(object sender, EventArgs e)
@@ -191,7 +207,6 @@ namespace Minesweeper
 
             ReversiButton start = (ReversiButton)sender;
             MouseEventArgs me = (MouseEventArgs)e;
-            
 
             if (me.Button == MouseButtons.Right)
             {
@@ -200,81 +215,164 @@ namespace Minesweeper
                 return;
             }
 
-            CheckValidMove(start);
-        }
-
-        private void CheckValidMove(ReversiButton start)
-        {
-            this.lastKnownStart = start.SquarePoint;
-            if (start.BackColor != this.emptyColor)
-            {
-                return;
-            }
-
-            buttonState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
-
-            int flipCount = 0;
-
-            flipCount += GenericValidate(start, Direction.LEFT);
-            flipCount += GenericValidate(start, Direction.TOP);
-            flipCount += GenericValidate(start, Direction.TOPLEFT);
-            flipCount += GenericValidate(start, Direction.TOPRIGHT);
-            flipCount += GenericValidate(start, Direction.RIGHT);
-            flipCount += GenericValidate(start, Direction.BOTTOMRIGHT);
-            flipCount += GenericValidate(start, Direction.BOTTOM);
-            flipCount += GenericValidate(start, Direction.BOTTOMLEFT);
-
-            if (flipCount > 0)
-            { 
-                if (this.currentColor == Color.White)
-                {
-                    this.whiteCount++;
-                }
-                else if (this.currentColor == Color.Black)
-                {
-                    this.blackCount++;
-                }
-
-                if (currentColor == Color.Black)
-                {
-                    turnButton.ForeColor = currentColor;
-                    currentColor = Color.White;
-                    turnButton.Text = "White";
-                    if (flipCount > 0)
-                    { 
-                        this.whiteCount -= flipCount;
-                        this.blackCount += flipCount;
-                    }
-                    this.blackCountBox.Text = blackCount.ToString();
-                    this.whiteCountBox.Text = whiteCount.ToString();
-                }
-                else
-                {
-                    turnButton.ForeColor = currentColor;
-                    currentColor = Color.Black;
-                    turnButton.Text = "Black";
-                    if (flipCount > 0)
-                    {
-                        this.whiteCount += flipCount;
-                        this.blackCount -= flipCount;
-                    }
-                    this.blackCountBox.Text = blackCount.ToString();
-                    this.whiteCountBox.Text = whiteCount.ToString();
-                }
-
-                turnButton.BackColor = currentColor;
-            }
+            var guessState = new State[0,0];
+            var points = new List<Point>();
+            int flipCount = CheckValidMove(start, this.buttonState,out points, out guessState);
+            FlipColorsOnCount(flipCount);
+            lastKnownStart = start.SquarePoint;
 
             if (currentColor == Color.White)
             {
-                GuessBestMove();
+               GuessBestMove();
             }
         }
 
-
-        private int GenericValidate(ReversiButton start, Direction direction)
+        private int CheckValidMove(ReversiButton start, ReversiButton[,] tempState, out List<Point> points, out State[,] guessState, bool isGuess = false)
         {
-            var p = start.SquarePoint;
+            points = new List<Point>();
+
+            if (isGuess)
+            {
+                guessState = new State[12,12];
+            }
+            else
+            {
+                guessState = new State[1,1];
+            }
+
+            if (start.BackColor != this.emptyColor)
+            {
+                return 0;
+            }
+
+            tempState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
+
+            int flipCount = 0;
+
+            flipCount += GenericValidate(start, Direction.LEFT, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.TOP, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.TOPLEFT, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.TOPRIGHT, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.RIGHT, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.BOTTOMRIGHT, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.BOTTOM, tempState, points, guessState, isGuess);
+            flipCount += GenericValidate(start, Direction.BOTTOMLEFT, tempState, points, guessState, isGuess);
+
+            return flipCount;
+        }
+
+        private void FlipColorsOnCount(int flipCount)
+        {
+            if (this.currentColor == Color.White)
+            {
+                this.whiteCount++;
+            }
+            else if (this.currentColor == Color.Black)
+            {
+                this.blackCount++;
+            }
+
+            if (currentColor == Color.Black)
+            {
+                currentColor = Color.White;
+                turnButton.Text = "White";
+
+                if (flipCount > 0)
+                {
+                    this.whiteCount -= flipCount;
+                    this.blackCount += flipCount;
+                }
+            }
+            else
+            {
+                currentColor = Color.Black;
+                turnButton.Text = "Black";
+
+                if (flipCount > 0)
+                {
+                    this.whiteCount += flipCount;
+                    this.blackCount -= flipCount;
+                }
+            }
+
+            this.blackCountBox.Text = blackCount.ToString();
+            this.whiteCountBox.Text = whiteCount.ToString();
+            turnButton.BackColor = currentColor;
+        }
+
+        private int GenericValidate(ReversiButton start, Direction direction, ReversiButton[,] tempState, List<Point> points, State[,] guessState, bool isGuess)
+        {
+            int directionCounter = 0;
+            bool isValid = false;
+
+            while (true)
+            {
+                directionCounter++;
+                Point modifiedPoint = ModifyPointDirection(direction, directionCounter, start.SquarePoint);
+
+                if (this.utilties.isValid(modifiedPoint.X, modifiedPoint.Y))
+                {
+                    if (tempState[modifiedPoint.X, modifiedPoint.Y].BackColor != Color.Green && tempState[modifiedPoint.X, modifiedPoint.Y].BackColor != this.currentColor)
+                    {
+                        points.Add(new Point(modifiedPoint.X, modifiedPoint.Y));
+                    }
+                    else
+                    {
+                        if (points.Count > 0 && tempState[modifiedPoint.X, modifiedPoint.Y].BackColor == this.currentColor)
+                        {
+                            isValid = true;
+                        }
+                        break;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+            if (!isGuess)
+            {
+                if (points.Count > 0 && isValid)
+                {
+                    start.BackColor = this.currentColor;
+                    foreach (Point pt in points)
+                    {
+                        tempState[pt.X, pt.Y].BackColor = this.currentColor;
+                        tempState[pt.X, pt.Y].IsEmpty = false;
+                    }
+
+                    return points.Count;
+                }
+            }
+            else
+            {
+                if (points.Count > 0 && isValid)
+                {
+                    var p = start.SquarePoint;
+                    guessState[p.X, p.Y] = new State
+                    {
+                        BackColor = this.currentColor
+                    };
+
+                    foreach (Point pt in points)
+                    {
+                        guessState[pt.X, pt.Y] = new State
+                        {
+                            BackColor = this.currentColor,
+                            IsEmpty = false
+                        };
+                    }
+
+                    return points.Count;
+                }
+            }
+
+            return 0;
+        }
+
+        private int GenericValidateWithState(Point start, Direction direction, State[,] tempState)
+        {
             int directionCounter = 0;
             bool isValid = false;
             List<Point> points = new List<Point>();
@@ -282,65 +380,17 @@ namespace Minesweeper
             while (true)
             {
                 directionCounter++;
-                Point modifiedPoint = start.SquarePoint;
-                switch(direction)
-                {
-                    case Direction.TOP:
-                        {
-                            modifiedPoint.Y = modifiedPoint.Y - directionCounter;
-                            break;
-                        }
-                    case Direction.LEFT:
-                        {
-                            modifiedPoint.X = modifiedPoint.X -directionCounter;
-                            break;
-                        }
-                    case Direction.RIGHT:
-                        {
-                            modifiedPoint.X = modifiedPoint.X + directionCounter;
-                            break;
-                        }
-                    case Direction.BOTTOM:
-                        { 
-                            modifiedPoint.Y = modifiedPoint.Y + directionCounter;
-                            break;
-                        }
-                    case Direction.TOPLEFT:
-                        {
-                            modifiedPoint.Y = modifiedPoint.Y - directionCounter;
-                            modifiedPoint.X = modifiedPoint.X - directionCounter;
-                            break;
-                        }
-                    case Direction.TOPRIGHT:
-                        {
-                            modifiedPoint.Y = modifiedPoint.Y - directionCounter;
-                            modifiedPoint.X = modifiedPoint.X + directionCounter;
-                            break;
-                        }
-                    case Direction.BOTTOMLEFT:
-                        {
-                            modifiedPoint.Y = modifiedPoint.Y + directionCounter;
-                            modifiedPoint.X = modifiedPoint.X - directionCounter;
-                            break;
-                        }
-                    case Direction.BOTTOMRIGHT:
-                        {
-                            modifiedPoint.Y = modifiedPoint.Y + directionCounter;
-                            modifiedPoint.X = modifiedPoint.X + directionCounter;
-                            break;
-                        }
-                }
+                Point modifiedPoint = ModifyPointDirection(direction, directionCounter, start);
 
-                
-                if (this.utilties.isValid(modifiedPoint.X , modifiedPoint.Y))
+                if (this.utilties.isValid(modifiedPoint.X, modifiedPoint.Y))
                 {
-                    if (buttonState[modifiedPoint.X, modifiedPoint.Y].BackColor != Color.Green && buttonState[modifiedPoint.X, modifiedPoint.Y].BackColor != this.currentColor)
+                    if (tempState[modifiedPoint.X, modifiedPoint.Y].BackColor != Color.Green && tempState[modifiedPoint.X, modifiedPoint.Y].BackColor != this.currentColor)
                     {
                         points.Add(new Point(modifiedPoint.X, modifiedPoint.Y));
                     }
                     else
                     {
-                        if (points.Count > 0 && buttonState[modifiedPoint.X, modifiedPoint.Y].BackColor == this.currentColor)
+                        if (points.Count > 0 && tempState[modifiedPoint.X, modifiedPoint.Y].BackColor == this.currentColor)
                         {
                             isValid = true;
                         }
@@ -355,11 +405,11 @@ namespace Minesweeper
 
             if (points.Count > 0 && isValid)
             {
-                start.BackColor = this.currentColor;
+                tempState[start.X, start.Y].BackColor = this.currentColor;
                 foreach (Point pt in points)
                 {
-                    buttonState[pt.X, pt.Y].BackColor = this.currentColor;
-                    buttonState[pt.X, pt.Y].IsEmpty = false;
+                    tempState[pt.X, pt.Y].BackColor = this.currentColor;
+                    tempState[pt.X, pt.Y].IsEmpty = false;
                 }
 
                 return points.Count;
@@ -367,5 +417,127 @@ namespace Minesweeper
 
             return 0;
         }
+
+        private static Point ModifyPointDirection(Direction direction, int directionCounter, Point modifiedPoint)
+        {
+            switch (direction)
+            {
+                case Direction.TOP:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - directionCounter;
+                        break;
+                    }
+                case Direction.LEFT:
+                    {
+                        modifiedPoint.X = modifiedPoint.X - directionCounter;
+                        break;
+                    }
+                case Direction.RIGHT:
+                    {
+                        modifiedPoint.X = modifiedPoint.X + directionCounter;
+                        break;
+                    }
+                case Direction.BOTTOM:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + directionCounter;
+                        break;
+                    }
+                case Direction.TOPLEFT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - directionCounter;
+                        modifiedPoint.X = modifiedPoint.X - directionCounter;
+                        break;
+                    }
+                case Direction.TOPRIGHT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - directionCounter;
+                        modifiedPoint.X = modifiedPoint.X + directionCounter;
+                        break;
+                    }
+                case Direction.BOTTOMLEFT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + directionCounter;
+                        modifiedPoint.X = modifiedPoint.X - directionCounter;
+                        break;
+                    }
+                case Direction.BOTTOMRIGHT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + directionCounter;
+                        modifiedPoint.X = modifiedPoint.X + directionCounter;
+                        break;
+                    }
+            }
+
+            return modifiedPoint;
+        }
+
+        private static Point ModifyPointDirection(Direction direction, Point modifiedPoint)
+        {
+            switch (direction)
+            {
+                case Direction.TOP:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - 1;
+                        break;
+                    }
+                case Direction.LEFT:
+                    {
+                        modifiedPoint.X = modifiedPoint.X - 1;
+                        break;
+                    }
+                case Direction.RIGHT:
+                    {
+                        modifiedPoint.X = modifiedPoint.X + 1;
+                        break;
+                    }
+                case Direction.BOTTOM:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + 1;
+                        break;
+                    }
+                case Direction.TOPLEFT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - 1;
+                        modifiedPoint.X = modifiedPoint.X - 1;
+                        break;
+                    }
+                case Direction.TOPRIGHT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y - 1;
+                        modifiedPoint.X = modifiedPoint.X + 1;
+                        break;
+                    }
+                case Direction.BOTTOMLEFT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + 1;
+                        modifiedPoint.X = modifiedPoint.X - 1;
+                        break;
+                    }
+                case Direction.BOTTOMRIGHT:
+                    {
+                        modifiedPoint.Y = modifiedPoint.Y + 1;
+                        modifiedPoint.X = modifiedPoint.X + 1;
+                        break;
+                    }
+            }
+
+            return modifiedPoint;
+        }
+    }
+
+
+    internal class State
+    {
+        public int gridX;
+        public int gridY;
+        public Color Color;
+        public Color BackColor;
+        public bool IsEmpty = true;
+    }
+
+    internal class FlipCounts
+    {
+        public List<Point>points;
+        public State[,] states;
     }
 }

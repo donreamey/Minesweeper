@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Minesweeper.Properties
+namespace Reversi.Properties
 {
 
 

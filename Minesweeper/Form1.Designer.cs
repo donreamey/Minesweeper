@@ -37,7 +37,6 @@
             // 
             // menuStrip1
             // 
-            this.menuStrip1.GripMargin = new System.Windows.Forms.Padding(2, 2, 0, 2);
             this.menuStrip1.ImageScalingSize = new System.Drawing.Size(24, 24);
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.gamesToolStripMenuItem});
@@ -66,7 +65,7 @@
             // reversiToolStripMenuItem
             // 
             this.reversiToolStripMenuItem.Name = "reversiToolStripMenuItem";
-            this.reversiToolStripMenuItem.Size = new System.Drawing.Size(270, 34);
+            this.reversiToolStripMenuItem.Size = new System.Drawing.Size(218, 34);
             this.reversiToolStripMenuItem.Text = "Reversi";
             this.reversiToolStripMenuItem.Click += new System.EventHandler(this.reversiToolStripMenuItem_Click);
             // 
@@ -74,7 +73,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1878, 1581);
+            this.ClientSize = new System.Drawing.Size(1878, 1683);
             this.Controls.Add(this.menuStrip1);
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Form1";

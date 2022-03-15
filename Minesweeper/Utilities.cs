@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using Reversi;
 
 namespace Minesweeper
 {
@@ -40,6 +41,11 @@ namespace Minesweeper
             }
 
             return true;
+        }
+
+        internal bool IsValidAndEmptyReversi(Point p)
+        {
+            return IsValidAndEmptyReversi(p.X, p.Y);
         }
     }
 
