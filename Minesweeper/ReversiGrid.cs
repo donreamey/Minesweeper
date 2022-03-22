@@ -140,7 +140,8 @@ namespace Reversi
                     tempState[tempPoint.X, tempPoint.Y].Text = "VALID";
                 }
             }
-
+            
+            var m = new List<Tuple<int, FlipCounts>>();
             var map = new Dictionary<int, FlipCounts>();
             if (availableMoves.Count > 0)
             {
@@ -157,7 +158,7 @@ namespace Reversi
                     // reset tempState;
                     tempState = (ReversiButton[,])buttonState.Clone();
 
-                    if (flipCount > 0 && !map.ContainsKey(flipCount))
+                    if (flipCount > 0)
                     {
                         // guess moves only play as white so change 
                         // the color of the start button only when
@@ -165,45 +166,58 @@ namespace Reversi
                         startTempButton.BackColor = Color.White;
                         guessState[startTempButton.SquarePoint.X, startTempButton.SquarePoint.Y].IsEmpty = false;
                         guessState[startTempButton.SquarePoint.X, startTempButton.SquarePoint.Y].BackColor = Color.White;
+
+                        points.Add(new Point(startTempButton.SquarePoint.X, startTempButton.SquarePoint.Y));
                         var flipCounts = new FlipCounts
                         {
-                            startButton = startTempButton,
                             states = guessState,
                             points = points
                         };
 
-                        map.Add(points.Count, flipCounts);
+                        m.Add(new Tuple<int, FlipCounts>(points.Count, flipCounts));
+                        //map.Add(points.Count, flipCounts);
                     }
                 }
             }
 
-            if (map.Count > 0)
+            if (m.Count > 0)
             {
-                ApplyBestMove(map);
+                ApplyBestMove(m);
             }
 
             lastKnownStart = tempPoint;
         }
 
-        private void ApplyBestMove(Dictionary<int,FlipCounts> map)
+        private void ApplyBestMove(List<Tuple<int, FlipCounts>> map)
         {
             int count = 0;
-            foreach(int x in map.Keys)
+            int index = 0;
+
+            foreach (var x in map)
             {
-                if (x > count)
+                if (x.Item1 > count)
                 {
-                    count = x;
+                    index++;
+                    count = x.Item1;
                 }
             }
 
-            var flips = map[count];
-            foreach(var p in flips.points)
+            var flips = map[index-1].Item2;
+
+            //var point = new Point(flips.startButton.SquarePoint.X, flips.startButton.SquarePoint.Y);
+            //this.buttonState[point.X, point.Y] = flips.startButton.Clone();
+
+            foreach (var p in flips.points)
             {
                 ((ReversiButton)this.buttonState[p.X, p.Y]).BackColor = flips.states[p.X, p.Y].BackColor;
                 ((ReversiButton)this.buttonState[p.X, p.Y]).SquarePoint = p;
                 ((ReversiButton)this.buttonState[p.X, p.Y]).IsEmpty = flips.states[p.X, p.Y].IsEmpty;
                 ((ReversiButton)this.buttonState[p.X, p.Y]).BackColor = flips.states[p.X, p.Y].BackColor;
             }
+
+            FlipColorsOnCount(flips.points.Count);
+
+            currentColor = Color.Black;
         }
 
         private void CheckGridLocation(object sender, EventArgs e)
@@ -246,6 +260,7 @@ namespace Reversi
             else
             {
                 guessState = new State[1,1];
+                tempState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
             }
 
             if (start.BackColor != this.emptyColor)
@@ -253,42 +268,33 @@ namespace Reversi
                 return 0;
             }
 
-            tempState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
 
             int flipCount = 0;
             List<Point> tempPoints = new List<Point>();
 
             flipCount += GenericValidate(start, Direction.LEFT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.TOP, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.TOPLEFT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.TOPRIGHT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.RIGHT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.BOTTOMRIGHT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.BOTTOM, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             flipCount += GenericValidate(start, Direction.BOTTOMLEFT, tempState, points, guessState, isGuess);
             tempPoints.AddRange(points);
-            if (isGuess) guessState = new State[12, 12];
 
             points = tempPoints;
 
