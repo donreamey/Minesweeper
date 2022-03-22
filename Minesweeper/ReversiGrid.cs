@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Windows.Forms;
 using Minesweeper;
 
@@ -148,18 +149,25 @@ namespace Reversi
                 foreach(Point start in availableMoves)
                 {
                     Trace.WriteLine("check available moves x = " + start.X +", Y = "+ start.Y);
-                    var tempButton = tempState[start.X, start.Y].Clone();
+                    var startTempButton = tempState[start.X, start.Y].Clone();
                     var guessState = new State[12, 12];
                     var points = new List<Point>();
-                    flipCount = CheckValidMove(tempButton, tempState, out points, out guessState, true);
+                    flipCount = CheckValidMove(startTempButton, tempState, out points, out guessState, true);
 
                     // reset tempState;
                     tempState = (ReversiButton[,])buttonState.Clone();
 
                     if (flipCount > 0 && !map.ContainsKey(flipCount))
                     {
+                        // guess moves only play as white so change 
+                        // the color of the start button only when
+                        // the flip count is greater 0
+                        startTempButton.BackColor = Color.White;
+                        guessState[startTempButton.SquarePoint.X, startTempButton.SquarePoint.Y].IsEmpty = false;
+                        guessState[startTempButton.SquarePoint.X, startTempButton.SquarePoint.Y].BackColor = Color.White;
                         var flipCounts = new FlipCounts
                         {
+                            startButton = startTempButton,
                             states = guessState,
                             points = points
                         };
@@ -248,15 +256,41 @@ namespace Reversi
             tempState[start.SquarePoint.X, start.SquarePoint.Y].IsEmpty = false;
 
             int flipCount = 0;
+            List<Point> tempPoints = new List<Point>();
 
             flipCount += GenericValidate(start, Direction.LEFT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.TOP, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.TOPLEFT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.TOPRIGHT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.RIGHT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.BOTTOMRIGHT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.BOTTOM, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
             flipCount += GenericValidate(start, Direction.BOTTOMLEFT, tempState, points, guessState, isGuess);
+            tempPoints.AddRange(points);
+            if (isGuess) guessState = new State[12, 12];
+
+            points = tempPoints;
 
             return flipCount;
         }
@@ -366,6 +400,11 @@ namespace Reversi
 
                     return points.Count;
                 }
+            }
+
+            if (!isValid)
+            {
+                points.Clear();
             }
 
             return 0;
@@ -537,6 +576,7 @@ namespace Reversi
 
     internal class FlipCounts
     {
+        public ReversiButton startButton;
         public List<Point>points;
         public State[,] states;
     }
